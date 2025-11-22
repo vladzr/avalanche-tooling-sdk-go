@@ -100,7 +100,7 @@ func (s *Signer) SignTx(chainID *big.Int, tx *types.Transaction) (*types.Transac
 	txSigner := types.LatestSignerForChainID(chainID)
 	hash := txSigner.Hash(tx)
 
-	signature, err := s.signer.SignHash(hash.Bytes())
+	signature, err := s.signer.Sign(hash.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction hash: %w", err)
 	}
