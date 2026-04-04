@@ -26,6 +26,22 @@ const (
 	InitialBackoff                    = 5 * time.Second
 )
 
+// RequestFormat controls how the request body is encoded when calling the
+// signature aggregator.
+type RequestFormat string
+
+const (
+	// RequestFormatAuto preserves the existing behavior:
+	// camelCase for non-local endpoints, kebab-case for localhost endpoints.
+	RequestFormatAuto RequestFormat = "auto"
+
+	// RequestFormatCamelCase forces camelCase JSON field names.
+	RequestFormatCamelCase RequestFormat = "camelCase"
+
+	// RequestFormatKebabCase forces kebab-case JSON field names.
+	RequestFormatKebabCase RequestFormat = "kebab-case"
+)
+
 // aggregateSignatureRequestCamelCase is the camelCase version of the request
 // for non-local signature aggregator endpoints
 type aggregateSignatureRequestCamelCase struct {
@@ -44,6 +60,7 @@ type signMessageSettings struct {
 	requestTimeout time.Duration
 	maxRetries     int
 	initialBackoff time.Duration
+	requestFormat  RequestFormat
 }
 
 // SignMessageOption allows callers to customize the behavior of SignMessage
@@ -81,16 +98,47 @@ func WithInitialBackoff(seconds int) SignMessageOption {
 	}
 }
 
+// WithRequestFormat overrides how the request JSON is encoded when calling
+// the signature aggregator.
+//
+// Supported values:
+//   - RequestFormatAuto
+//   - RequestFormatCamelCase
+//   - RequestFormatKebabCase
+func WithRequestFormat(format RequestFormat) SignMessageOption {
+	return func(s *signMessageSettings) {
+		switch format {
+		case RequestFormatAuto, RequestFormatCamelCase, RequestFormatKebabCase:
+			s.requestFormat = format
+		}
+	}
+}
+
+// shouldUseCamelCase decides which request format to use.
+// In auto mode, it preserves the original localhost-based behavior.
+func shouldUseCamelCase(endpoint string, format RequestFormat) bool {
+	switch format {
+	case RequestFormatCamelCase:
+		return true
+	case RequestFormatKebabCase:
+		return false
+	case RequestFormatAuto, "":
+		return !utils.IsEndpointLocalhost(endpoint)
+	default:
+		return !utils.IsEndpointLocalhost(endpoint)
+	}
+}
+
 // SignMessage sends a request to the signature aggregator to sign a message.
 // It returns the signed warp message or an error if the operation fails.
 //
 // For backward-compatibility, the original parameters remain unchanged and
 // default retry behavior is preserved. Callers may optionally provide one
 // or more SignMessageOption values to override the default timeout, retry
-// count, or initial backoff.
+// count, initial backoff, or request format.
 //
-// Automatically uses camelCase JSON for non-local endpoints and kebab-case
-// for local endpoints.
+// By default, it preserves the existing behavior of automatically using
+// camelCase JSON for non-local endpoints and kebab-case for local endpoints.
 func SignMessage(
 	logger logging.Logger,
 	signatureAggregatorEndpoint string,
@@ -106,6 +154,7 @@ func SignMessage(
 		requestTimeout: SignatureAggregatorRequestTimeout,
 		maxRetries:     MaxRetries,
 		initialBackoff: InitialBackoff,
+		requestFormat:  RequestFormatAuto,
 	}
 
 	// Apply any caller-provided overrides.
@@ -124,8 +173,9 @@ func SignMessage(
 		err         error
 	)
 
-	// Use camelCase JSON for non-local signature aggregators, kebab-case for local
-	useCamelCase := !utils.IsEndpointLocalhost(signatureAggregatorEndpoint)
+	// Preserve the old localhost-based behavior by default, but allow callers
+	// to explicitly override the request format when needed.
+	useCamelCase := shouldUseCamelCase(signatureAggregatorEndpoint, settings.requestFormat)
 
 	if useCamelCase {
 		// Use camelCase JSON field names for non-local signature aggregators
