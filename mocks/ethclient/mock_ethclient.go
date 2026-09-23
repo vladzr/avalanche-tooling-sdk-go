@@ -14,11 +14,11 @@ import (
 	big "math/big"
 	reflect "reflect"
 
+	rpc "github.com/ava-labs/avalanchego/graft/evm/rpc"
+	params "github.com/ava-labs/avalanchego/graft/subnet-evm/params"
 	libevm "github.com/ava-labs/libevm"
 	common "github.com/ava-labs/libevm/common"
 	types "github.com/ava-labs/libevm/core/types"
-	params "github.com/ava-labs/subnet-evm/params"
-	rpc "github.com/ava-labs/subnet-evm/rpc"
 	gomock "go.uber.org/mock/gomock"
 )
 

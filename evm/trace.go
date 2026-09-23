@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ava-labs/subnet-evm/rpc"
+	"github.com/ava-labs/avalanchego/graft/evm/rpc"
 
 	"github.com/ava-labs/avalanche-tooling-sdk-go/utils"
 )

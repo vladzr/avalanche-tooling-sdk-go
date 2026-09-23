@@ -9,7 +9,6 @@ import (
 
 	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
 	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/version"
 
 	ledger "github.com/ava-labs/ledger-avalanche-go"
 	bip32 "github.com/tyler-smith/go-bip32"
@@ -206,7 +205,7 @@ func (l *Device) Sign(txBytes []byte, addressIndices []uint32) ([][]byte, error)
 	return responses, nil
 }
 
-func (l *Device) Version() (*version.Semantic, error) {
+func (l *Device) Version() (*Semantic, error) {
 	var resp *ledger.VersionInfo
 	err := retryOnHIDAPIError(func() error {
 		var err error
@@ -216,7 +215,7 @@ func (l *Device) Version() (*version.Semantic, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &version.Semantic{
+	return &Semantic{
 		Major: int(resp.Major),
 		Minor: int(resp.Minor),
 		Patch: int(resp.Patch),

@@ -8,7 +8,7 @@ import (
 	"github.com/ava-labs/avalanchego/vms/platformvm/warp"
 	"github.com/ava-labs/libevm/core/types"
 
-	subnetEvmWarp "github.com/ava-labs/subnet-evm/precompile/contracts/warp"
+	subnetEvmWarp "github.com/ava-labs/avalanchego/graft/subnet-evm/precompile/contracts/warp"
 )
 
 // get all unsigned warp messages contained in [logs]
