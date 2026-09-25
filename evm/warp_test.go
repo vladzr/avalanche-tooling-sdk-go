@@ -11,7 +11,7 @@ import (
 	"github.com/ava-labs/libevm/core/types"
 	"github.com/stretchr/testify/require"
 
-	subnetevmwarp "github.com/ava-labs/subnet-evm/precompile/contracts/warp"
+	subnetevmwarp "github.com/ava-labs/avalanchego/graft/subnet-evm/precompile/contracts/warp"
 )
 
 func TestGetWarpMessagesFromLogs(t *testing.T) {

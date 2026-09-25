@@ -4,8 +4,8 @@
 package utils
 
 import (
+	"github.com/ava-labs/avalanchego/graft/coreth/plugin/evm/atomic"
 	"github.com/ava-labs/avalanchego/wallet/chain/x/builder"
-	"github.com/ava-labs/coreth/plugin/evm/atomic"
 
 	"github.com/ava-labs/avalanche-tooling-sdk-go/constants"
 

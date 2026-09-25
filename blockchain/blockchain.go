@@ -13,14 +13,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/ava-labs/avalanchego/graft/subnet-evm/commontype"
+	"github.com/ava-labs/avalanchego/graft/subnet-evm/params"
+	"github.com/ava-labs/avalanchego/graft/subnet-evm/params/extras"
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 	"github.com/ava-labs/libevm/common"
 	"github.com/ava-labs/libevm/core"
-	"github.com/ava-labs/subnet-evm/commontype"
-	"github.com/ava-labs/subnet-evm/params"
-	"github.com/ava-labs/subnet-evm/params/extras"
+	"github.com/ava-labs/libevm/libevm"
 	"go.uber.org/zap"
 
 	"github.com/ava-labs/avalanche-tooling-sdk-go/evm"
@@ -30,7 +31,7 @@ import (
 	"github.com/ava-labs/avalanche-tooling-sdk-go/validatormanager"
 	"github.com/ava-labs/avalanche-tooling-sdk-go/vm"
 
-	subnetevmutils "github.com/ava-labs/subnet-evm/utils"
+	subnetevmutils "github.com/ava-labs/avalanchego/graft/evm/utils"
 )
 
 var (
@@ -276,16 +277,21 @@ func CreateEvmGenesis(
 	genesis.GasLimit = subnetEVMParams.FeeConfig.GasLimit.Uint64()
 
 	var jsonBytes []byte
-	params.WithTempRegisteredExtras(func() {
-		chainExtras := *extras.SubnetEVMDefaultChainConfig
-		chainExtras.FeeConfig = subnetEVMParams.FeeConfig
-		chainExtras.GenesisPrecompiles = subnetEVMParams.Precompiles
-		chainExtras.NetworkUpgrades = extras.NetworkUpgrades{}
-		params.WithExtra(conf, &chainExtras)
+	// avalanchego v1.15.0 gates temporary extras registration behind an explicit
+	// lock and propagates the callback's error instead of relying on capture.
+	if err := libevm.WithTemporaryExtrasLock(func(lock libevm.ExtrasLock) error {
+		return params.WithTempRegisteredExtras(lock, func() error {
+			chainExtras := *extras.SubnetEVMDefaultChainConfig
+			chainExtras.FeeConfig = subnetEVMParams.FeeConfig
+			chainExtras.GenesisPrecompiles = subnetEVMParams.Precompiles
+			chainExtras.NetworkUpgrades = extras.NetworkUpgrades{}
+			params.WithExtra(conf, &chainExtras)
 
-		jsonBytes, err = genesis.MarshalJSON()
-	})
-	if err != nil {
+			var err error
+			jsonBytes, err = genesis.MarshalJSON()
+			return err
+		})
+	}); err != nil {
 		return nil, err
 	}
 

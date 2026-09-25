@@ -12,8 +12,8 @@ package ledgermock
 import (
 	reflect "reflect"
 
+	ledger "github.com/ava-labs/avalanche-tooling-sdk-go/keychain/ledger"
 	secp256k1 "github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	version "github.com/ava-labs/avalanchego/version"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -116,10 +116,10 @@ func (mr *LedgerMockRecorder) SignHash(hash, addressIndices any) *gomock.Call {
 }
 
 // Version mocks base method.
-func (m *Ledger) Version() (*version.Semantic, error) {
+func (m *Ledger) Version() (*ledger.Semantic, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Version")
-	ret0, _ := ret[0].(*version.Semantic)
+	ret0, _ := ret[0].(*ledger.Semantic)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

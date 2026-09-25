@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ava-labs/avalanchego/graft/subnet-evm/accounts/abi/bind"
 	"github.com/ava-labs/avalanchego/utils/crypto/keychain"
 	"github.com/ava-labs/avalanchego/wallet/chain/c"
 	"github.com/ava-labs/libevm/common"
 	"github.com/ava-labs/libevm/core/types"
-	"github.com/ava-labs/subnet-evm/accounts/abi/bind"
 
 	"github.com/ava-labs/avalanche-tooling-sdk-go/key"
 )
@@ -78,6 +78,13 @@ func (s *Signer) IsNoOp() (bool, error) {
 	return s.signer == nil, nil
 }
 
+// hashSigner signs a pre-computed hash. avalanchego v1.15.0 dropped SignHash from
+// keychain.Signer, but EVM signing needs the tx hash signed as-is rather than
+// re-hashed, and the concrete secp256k1 keys still implement it.
+type hashSigner interface {
+	SignHash([]byte) ([]byte, error)
+}
+
 // SignTx signs the provided transaction with the given chainID and returns the signed transaction
 // For NoOp signers, returns the transaction unchanged
 func (s *Signer) SignTx(chainID *big.Int, tx *types.Transaction) (*types.Transaction, error) {
@@ -100,7 +107,12 @@ func (s *Signer) SignTx(chainID *big.Int, tx *types.Transaction) (*types.Transac
 	txSigner := types.LatestSignerForChainID(chainID)
 	hash := txSigner.Hash(tx)
 
-	signature, err := s.signer.SignHash(hash.Bytes())
+	hs, ok := s.signer.(hashSigner)
+	if !ok {
+		return nil, fmt.Errorf("signer does not support signing raw hashes")
+	}
+
+	signature, err := hs.SignHash(hash.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction hash: %w", err)
 	}
